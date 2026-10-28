@@ -87,7 +87,7 @@ py -3.11 plot_qso.py "other.adi" --encoding gb18030
 | `weekly_qso_by_band.png` / `.svg` | 近 12 周波段百分比堆叠图 |
 | `summary.json` | 日期范围、每日数量、每周各波段计数及百分比、排除数量、配色 |
 
-以前生成的 `monthly_qso_by_band.*` 是旧版月度图，新程序不会更新它们；请使用 `weekly_qso_by_band.*`。
+月度图已恢复，每次运行均更新 `monthly_qso_by_band.png` 和 `.svg`，原有文件名保持不变。
 
 ## 配色
 
@@ -116,3 +116,10 @@ py -3.11 -m unittest discover -s tests -v
 测试包含字段长度和注释、非法输入、365 天窗口边界、波段过滤，以及 12 个自然周的首尾边界、当前周排除，以及跨年的 ISO 第 53 周。
 
 
+
+
+## 月度统计（已恢复）
+
+每次运行同时生成每日、每周和月度三张图。月度图按 UTC 通联日期统计，以输入日志中最新 QSO 日期为截止日（包含当天），向前取 365 天，再按自然月分组。包含当前未结束月份和本周最新记录；首尾月份只包含窗口内日期，可能显示 13 个月。
+
+月度统计独立于 config.json 的 end_date 和 --end-date，它们仍控制每日与每周图。九个波段（80m 至 10m）配色与原先一致，按 QSO 数量堆叠，不是百分比。尺寸为 3000 × 1000 像素，另有 SVG。统计明细写入 summary.json 的 monthly、monthly_start、monthly_end、monthly_total 字段。

@@ -192,6 +192,60 @@ def render(days, daily, weekly, out, station):
     plt.close(fig)
 
 
+def aggregate_monthly(rows):
+    end = max(day for day, _ in rows)
+    start = end - timedelta(days=364)
+    monthly = {}
+    for i in range(365):
+        monthly.setdefault((start + timedelta(days=i)).strftime('%Y-%m'), Counter())
+    excluded = Counter()
+    for day, record in rows:
+        if start <= day <= end:
+            band = record.get('BAND', '').strip().upper()
+            if band in BAND_COLORS:
+                monthly[day.strftime('%Y-%m')][band] += 1
+            else:
+                excluded[band or '(missing BAND)'] += 1
+    return start, end, monthly, excluded
+
+
+def render_monthly(start, end, monthly, out, station):
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+    fig, ax = plt.subplots(figsize=(15, 5), facecolor='white')
+    fig.subplots_adjust(left=.055, right=.945, bottom=.23, top=.66)
+    fig.text(.055, .91, 'Monthly QSOs by band', fontsize=22, weight='bold', color='#172b3a')
+    fig.text(.055, .85, f'{start} — {end}  |  UTC  |  {station}  |  Through latest QSO date', color='#667784')
+    months = list(monthly)
+    base = [0] * len(months)
+    for band, color in BAND_COLORS.items():
+        values = [monthly[m][band] for m in months]
+        ax.bar(range(len(months)), values, bottom=base, color=color, label=band.lower(),
+               width=.65, edgecolor='white', linewidth=.6)
+        base = [b + v for b, v in zip(base, values)]
+    for x, total in enumerate(base):
+        if total:
+            ax.annotate(f'{total:,}', (x, total), xytext=(0, 5), textcoords='offset points',
+                        ha='center', fontsize=9, color='#172b3a')
+    ax.set_xticks(range(len(months)), months, rotation=30, ha='right', fontsize=9)
+    ax.set_ylabel('QSOs')
+    ax.set_ylim(0, max(max(base, default=0) * 1.18, 1))
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    ax.set_axisbelow(True)
+    ax.grid(axis='y', color='#e7ebef')
+    for side in ['top', 'right', 'left']:
+        ax.spines[side].set_visible(False)
+    ax.spines['bottom'].set_color('#d7dde3')
+    ax.tick_params(length=0, colors='#526371', pad=8)
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(.05, .80),
+               ncol=9, frameon=False, handlelength=1.4, columnspacing=2)
+    fig.text(.055, .055, f'80m–10m only  •  {sum(base):,} QSOs  •  Current month included; edge months limited to the 365-day window.',
+             color='#667784', fontsize=10)
+    save(fig, out, 'monthly_qso_by_band')
+    plt.close(fig)
+
+
 def save(fig, out, name):
     for extension in ('png', 'svg'):
         fig.savefig(out / f'{name}.{extension}', dpi=200, facecolor='white')
@@ -218,8 +272,14 @@ def main():
         stations = sorted({r.get('STATION_CALLSIGN', r.get('APP_LOTW_OWNCALL', 'Unknown')) for _, r in rows})
         args.output_dir.mkdir(parents=True, exist_ok=True)
         render(days, daily, weekly, args.output_dir, ', '.join(stations))
+        monthly_start, monthly_end, monthly, monthly_excluded = aggregate_monthly(rows)
+        render_monthly(monthly_start, monthly_end, monthly, args.output_dir, ', '.join(stations))
         summary = {
             'source': str(args.input), 'records_read': len(rows), 'timezone': 'UTC',
+            'monthly_start': str(monthly_start), 'monthly_end': str(monthly_end),
+            'monthly_total': sum(sum(c.values()) for c in monthly.values()),
+            'excluded_from_monthly': dict(monthly_excluded),
+            'monthly': {m: {b: c[b] for b in BAND_COLORS} for m, c in monthly.items()},
             'start': str(days[0]), 'end': str(days[-1]), 'days': len(days),
             'daily_total': sum(daily.values()), 'weekly_total': sum(sum(v.values()) for v in weekly.values()),
             'weekly_start': str(min(weekly)), 'weekly_end': str(max(weekly) + timedelta(days=6)),
@@ -237,6 +297,7 @@ def main():
         print(f'Read {len(rows)} QSOs; window {days[0]} to {days[-1]} (365 days, UTC).')
         print(f'Daily total: {summary["daily_total"]}; weekly 80m-10m: {summary["weekly_total"]}.')
         print(f'Excluded weekly bands: {dict(excluded)}')
+        print(f'Monthly: {monthly_start} to {monthly_end}; {summary["monthly_total"]} QSOs.')
         print(f'Output: {args.output_dir.resolve()}')
     except (OSError, ValueError, ImportError) as exc:
         parser.exit(1, f'Error: {exc}\n')
