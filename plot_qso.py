@@ -96,7 +96,9 @@ def render(days, daily, weekly, out, station):
     from matplotlib.patches import FancyBboxPatch
     from matplotlib.cm import ScalarMappable
 
-    plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10,
+    plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 12,
+                         'font.weight': 'medium', 'text.color': '#253746',
+                         'axes.labelweight': 'bold',
                          'axes.titleweight': 'bold', 'svg.fonttype': 'none'})
     subtitle = f'{days[0]} — {days[-1]}  |  UTC  |  {station}'
     maximum = max(daily.values(), default=0)
@@ -108,10 +110,10 @@ def render(days, daily, weekly, out, station):
                               for i in range(levels)]
     fig = plt.figure(figsize=(15, 5.0), facecolor='white')
     fig.text(.055, .91, 'Daily QSO activity', fontsize=22, weight='bold', color='#172b3a')
-    fig.text(.055, .85, subtitle, color='#667784')
-    fig.text(.945, .91, f'{sum(daily.values()):,} QSOs', ha='right', fontsize=19, weight='bold')
+    fig.text(.055, .85, subtitle, color='#465665')
+    fig.text(.945, .91, f'{sum(daily.values()):,} QSOs', ha='right', fontsize=22, weight='bold')
     fig.text(.945, .85, f'{sum(v > 0 for v in daily.values())} active days  •  Peak {maximum}/day',
-             ha='right', color='#667784')
+             ha='right', color='#465665')
     ax = fig.add_axes([.055, .29, .89, .46])
     origin = days[0] - timedelta(days=(days[0].weekday() + 1) % 7)
     for day in days:
@@ -133,7 +135,7 @@ def render(days, daily, weekly, out, station):
     ax.set_xlim(0, (days[-1] - origin).days // 7 + 1)
     ax.set_ylim(7, 0)
     ax.set_aspect('equal')
-    ax.tick_params(length=0, pad=8, colors='#667784')
+    ax.tick_params(length=0, pad=8, colors='#253746')
     for spine in ax.spines.values():
         spine.set_visible(False)
     # Discrete numeric scale: 0; 1–20; 21–40; ... with no capped overflow bin.
@@ -142,24 +144,31 @@ def render(days, daily, weekly, out, station):
         bounds[-1] = maximum + .5
     cmap = ListedColormap(colors)
     cax = fig.add_axes([.40, .16, .545, .028])
+    # Keep all 20-QSO colors, but space numeric labels to avoid collisions.
+    tick_step = max(20, 20 * ((levels + 8) // 9))
+    color_ticks = [0] + [n for n in range(tick_step, maximum, tick_step)
+                         if maximum - n >= tick_step * .65]
+    if maximum:
+        color_ticks.append(maximum)
     bar = fig.colorbar(ScalarMappable(norm=BoundaryNorm(bounds, cmap.N), cmap=cmap),
                        cax=cax, orientation='horizontal', spacing='uniform',
-                       ticks=([0] + [20 * i for i in range(1, levels)] + [maximum])
-                       if maximum else [0])
-    bar.ax.tick_params(labelsize=7, length=2)
+                       ticks=color_ticks)
+    bar.ax.tick_params(labelsize=11, length=3, colors='#253746')
+    for label in bar.ax.get_xticklabels():
+        label.set_fontweight('bold')
     bar.outline.set_visible(False)
-    fig.text(.055, .17, 'QSO/day: 0 · 1–20 · 21–40 · …', color='#667784', fontsize=10)
+    fig.text(.055, .17, 'QSO/day: 0 · 1–20 · 21–40 · …', color='#465665', fontsize=10)
     fig.text(.055, .07, 'White + green outline: 0 QSOs. Blank cells outside the 365-day window are omitted.',
-             color='#667784', fontsize=9)
+             color='#465665', fontsize=9)
     save(fig, out, 'daily_qso_heatmap')
     plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(15, 5), facecolor='white')
-    fig.subplots_adjust(left=.055, right=.945, bottom=.23, top=.66)
+    fig.subplots_adjust(left=.075, right=.945, bottom=.23, top=.66)
     fig.text(.055, .91, 'Weekly QSO band distribution', fontsize=22, weight='bold', color='#172b3a')
     weeks = list(weekly)
     week_end = weeks[-1] + timedelta(days=6)
-    fig.text(.055, .85, f'{weeks[0]} — {week_end}  |  UTC  |  {station}  |  Last 12 complete ISO weeks', color='#667784')
+    fig.text(.055, .85, f'{weeks[0]} — {week_end}  |  UTC  |  {station}  |  Last 12 complete ISO weeks', color='#465665')
     totals = [sum(weekly[w].values()) for w in weeks]
     base = [0.] * len(weeks)
     for band, color in BAND_COLORS.items():
@@ -170,10 +179,10 @@ def render(days, daily, weekly, out, station):
     for x, total in enumerate(totals):
         ax.annotate(f'n={total:,}' if total else 'No QSO', (x, 100 if total else 0),
                     xytext=(0, 5), textcoords='offset points',
-                    ha='center', fontsize=8, color='#172b3a')
+                    ha='center', fontsize=12, weight='bold', color='#172b3a')
     ax.set_xticks(range(len(weeks)),
                   [f'Week {w.isocalendar().week}\n{w:%m/%d}–{w + timedelta(days=6):%m/%d}'
-                   for w in weeks], fontsize=8, linespacing=1.8)
+                   for w in weeks], fontsize=10, fontweight='bold', linespacing=1.8)
     ax.set_ylabel('Band share')
     ax.set_ylim(0, 112)
     ax.set_yticks([0, 25, 50, 75, 100], ['0%', '25%', '50%', '75%', '100%'])
@@ -182,12 +191,15 @@ def render(days, daily, weekly, out, station):
     for side in ['top', 'right', 'left']:
         ax.spines[side].set_visible(False)
     ax.spines['bottom'].set_color('#d7dde3')
-    ax.tick_params(length=0, colors='#526371', pad=8)
+    ax.tick_params(length=0, colors='#253746', pad=8)
+    for label in ax.get_yticklabels():
+        label.set_fontsize(12)
+        label.set_fontweight('bold')
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(.05, .80),
-               ncol=9, frameon=False, handlelength=1.4, columnspacing=2)
+               ncol=9, frameon=False, handlelength=1.4, columnspacing=1.6, prop={'size': 12, 'weight': 'bold'})
     fig.text(.055, .07, f'80m–10m only  •  {sum(totals):,} QSOs  •  Monday–Sunday (UTC); n = weekly QSO count. Empty weeks have no percentage.',
-             color='#667784', fontsize=10)
+             color='#465665', fontsize=10)
     save(fig, out, 'weekly_qso_by_band')
     plt.close(fig)
 
@@ -213,9 +225,9 @@ def render_monthly(start, end, monthly, out, station):
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
     fig, ax = plt.subplots(figsize=(15, 5), facecolor='white')
-    fig.subplots_adjust(left=.055, right=.945, bottom=.23, top=.66)
+    fig.subplots_adjust(left=.075, right=.945, bottom=.23, top=.66)
     fig.text(.055, .91, 'Monthly QSOs by band', fontsize=22, weight='bold', color='#172b3a')
-    fig.text(.055, .85, f'{start} — {end}  |  UTC  |  {station}  |  Through latest QSO date', color='#667784')
+    fig.text(.055, .85, f'{start} — {end}  |  UTC  |  {station}  |  Through latest QSO date', color='#465665')
     months = list(monthly)
     base = [0] * len(months)
     for band, color in BAND_COLORS.items():
@@ -226,8 +238,8 @@ def render_monthly(start, end, monthly, out, station):
     for x, total in enumerate(base):
         if total:
             ax.annotate(f'{total:,}', (x, total), xytext=(0, 5), textcoords='offset points',
-                        ha='center', fontsize=9, color='#172b3a')
-    ax.set_xticks(range(len(months)), months, rotation=30, ha='right', fontsize=9)
+                        ha='center', fontsize=13, weight='bold', color='#172b3a')
+    ax.set_xticks(range(len(months)), months, rotation=30, ha='right', fontsize=11, fontweight='bold')
     ax.set_ylabel('QSOs')
     ax.set_ylim(0, max(max(base, default=0) * 1.18, 1))
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
@@ -236,12 +248,15 @@ def render_monthly(start, end, monthly, out, station):
     for side in ['top', 'right', 'left']:
         ax.spines[side].set_visible(False)
     ax.spines['bottom'].set_color('#d7dde3')
-    ax.tick_params(length=0, colors='#526371', pad=8)
+    ax.tick_params(length=0, colors='#253746', pad=8)
+    for label in ax.get_yticklabels():
+        label.set_fontsize(12)
+        label.set_fontweight('bold')
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper left', bbox_to_anchor=(.05, .80),
-               ncol=9, frameon=False, handlelength=1.4, columnspacing=2)
+               ncol=9, frameon=False, handlelength=1.4, columnspacing=1.6, prop={'size': 12, 'weight': 'bold'})
     fig.text(.055, .055, f'80m–10m only  •  {sum(base):,} QSOs  •  Current month included; edge months limited to the 365-day window.',
-             color='#667784', fontsize=10)
+             color='#465665', fontsize=10)
     save(fig, out, 'monthly_qso_by_band')
     plt.close(fig)
 
