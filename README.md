@@ -7,7 +7,7 @@
 需要 Python 3.10 或以上。当前机器已安装项目本地依赖，可在此目录运行：
 
 ```powershell
-py -3.11 plot_qso.py "lotwreport (1).adi"
+py -3.11 plot_qso.py "lotwreport.adi"
 ```
 
 新机器推荐创建虚拟环境：
@@ -15,7 +15,7 @@ py -3.11 plot_qso.py "lotwreport (1).adi"
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe plot_qso.py "lotwreport (1).adi"
+.\.venv\Scripts\python.exe plot_qso.py "lotwreport.adi"
 ```
 
 macOS / Linux 使用 `python3 -m venv .venv`，然后使用 `.venv/bin/python` 安装依赖及运行程序。仅首次安装依赖需要联网。
@@ -43,10 +43,10 @@ macOS / Linux 使用 `python3 -m venv .venv`，然后使用 `.venv/bin/python` �
 
 ```powershell
 # 临时覆盖配置日期
-py -3.11 plot_qso.py "lotwreport (1).adi" --end-date 2026-12-31
+py -3.11 plot_qso.py "lotwreport.adi" --end-date 2026-12-31
 
 # 使用其他配置或输出目录
-py -3.11 plot_qso.py "lotwreport (1).adi" --config "config.json" --output-dir "charts"
+py -3.11 plot_qso.py "lotwreport.adi" --config "config.json" --output-dir "charts"
 
 # 非 UTF-8 编码日志
 py -3.11 plot_qso.py "other.adi" --encoding gb18030
