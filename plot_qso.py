@@ -104,7 +104,11 @@ def render(days, daily, weekly, out, station):
     maximum = max(daily.values(), default=0)
     levels = max(1, (maximum + 19) // 20)
     spectrum = LinearSegmentedColormap.from_list('qso_spectrum', [
-        '#B7EFA1', '#08752C', '#9ADFFF', '#1542B4', '#FFA0A0', '#A50026',
+        (0.0, '#5E4FA2'), (60/322, '#3288BD'),
+        (100/322, '#009E89'), (120/322, '#35B779'),
+        (140/322, '#90CF45'), (160/322, '#E6D52F'),
+        (180/322, '#FFAA32'), (200/322, '#F47735'),
+        (240/322, '#E34A33'), (280/322, '#C52346'), (1.0, '#9E0142'),
     ])
     colors = ['#FFFFFF'] + [spectrum(i / max(levels - 1, 1))
                               for i in range(levels)]
