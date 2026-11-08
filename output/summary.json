@@ -1,10 +1,10 @@
 {
   "source": "lotwreport.adi",
-  "records_read": 8488,
+  "records_read": 8673,
   "timezone": "UTC",
-  "monthly_start": "2025-11-07",
-  "monthly_end": "2026-11-06",
-  "monthly_total": 8485,
+  "monthly_start": "2025-11-09",
+  "monthly_end": "2026-11-08",
+  "monthly_total": 8670,
   "excluded_from_monthly": {
     "160M": 1,
     "70CM": 1,
@@ -144,15 +144,15 @@
       "10M": 612
     },
     "2026-11": {
-      "80M": 41,
+      "80M": 47,
       "60M": 5,
-      "40M": 85,
-      "30M": 13,
-      "20M": 72,
+      "40M": 119,
+      "30M": 19,
+      "20M": 79,
       "17M": 72,
-      "15M": 85,
-      "12M": 80,
-      "10M": 114
+      "15M": 115,
+      "12M": 113,
+      "10M": 183
     }
   },
   "start": "2025-11-06",
