@@ -103,15 +103,14 @@ def render(days, daily, weekly, out, station):
     subtitle = f'{days[0]} — {days[-1]}  |  UTC  |  {station}'
     maximum = max(daily.values(), default=0)
     levels = max(1, (maximum + 19) // 20)
-    spectrum = LinearSegmentedColormap.from_list('qso_spectrum', [
-        (0.0, '#5E4FA2'), (60/322, '#3288BD'),
-        (100/322, '#009E89'), (120/322, '#35B779'),
-        (140/322, '#90CF45'), (160/322, '#E6D52F'),
-        (180/322, '#FFAA32'), (200/322, '#F47735'),
-        (240/322, '#E34A33'), (280/322, '#C52346'), (1.0, '#9E0142'),
-    ])
-    colors = ['#FFFFFF'] + [spectrum(i / max(levels - 1, 1))
-                              for i in range(levels)]
+    # A10b: distinct 20-QSO bins up to 160; gradual dark red above 160.
+    low_palette = ['#5067C4', '#3288BD', '#00A6AA', '#43B66D',
+                   '#A8CF45', '#F3D43A', '#F99B32', '#E85336']
+    high_palette = LinearSegmentedColormap.from_list(
+        'a10b_high', ['#DB4640', '#AA272B', '#68191F'])
+    colors = ['#FFFFFF'] + [
+        low_palette[i] if i < 8 else high_palette((i - 8) / max(levels - 9, 1))
+        for i in range(levels)]
     fig = plt.figure(figsize=(15, 5.0), facecolor='white')
     fig.text(.055, .91, 'Daily QSO activity', fontsize=22, weight='bold', color='#172b3a')
     fig.text(.055, .85, subtitle, color='#465665')
